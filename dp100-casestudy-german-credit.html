@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DP-100 Case Study — German Credit Risk</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #ede8dc;
+    --rule: #c8bfaa;
+    --accent: #1e3a5f;
+    --accent2: #c0392b;
+    --gold: #a0845c;
+    --green: #1a5c3a;
+    --muted: #6b6454;
+    --display: 'Playfair Display', Georgia, serif;
+    --body: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #d4cfc6;
+    font-family: var(--body);
+    color: var(--ink);
+    padding: 2rem 1rem;
+  }
+
+  /* PAGE WRAPPER */
+  .page {
+    background: var(--paper);
+    max-width: 860px;
+    margin: 0 auto 3rem;
+    padding: 3.5rem 4rem;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 6px;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  /* HEADER AREA */
+  .doc-label {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .doc-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .page-title {
+    font-family: var(--display);
+    font-size: 2.4rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .page-subtitle {
+    font-family: var(--body);
+    font-size: 0.9rem;
+    color: var(--muted);
+    font-weight: 300;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--rule);
+  }
+
+  .page-subtitle strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* META ROW */
+  .meta-row {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .meta-label {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .meta-value {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  /* SCENARIO BOX */
+  .scenario-box {
+    background: var(--accent);
+    color: #f0ece4;
+    border-radius: 4px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .scenario-box .scenario-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-bottom: 0.5rem;
+  }
+
+  .scenario-box p {
+    font-size: 0.88rem;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .scenario-box strong {
+    font-weight: 500;
+    color: #fff;
+  }
+
+  /* DATASET STRIP */
+  .dataset-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .ds-cell {
+    padding: 0.9rem 1rem;
+    border-right: 1px solid var(--rule);
+    background: var(--cream);
+  }
+
+  .ds-cell:last-child { border-right: none; }
+
+  .ds-cell-label {
+    font-family: var(--mono);
+    font-size: 0.56rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .ds-cell-value {
+    font-family: var(--display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .ds-cell-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.1rem;
+  }
+
+  /* SECTION HEADINGS */
+  h2.section-heading {
+    font-family: var(--display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    margin-top: 1.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  h2.section-heading .num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    background: var(--accent);
+    color: #fff;
+    width: 1.4rem; height: 1.4rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* TASK CARDS */
+  .task-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .task-card {
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem 1rem;
+    align-items: start;
+  }
+
+  .task-step {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    white-space: nowrap;
+    padding-top: 0.1rem;
+  }
+
+  .task-card h3 {
+    font-family: var(--display);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+  }
+
+  .task-card p {
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .task-card ul {
+    list-style: none;
+    margin-top: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .task-card ul li {
+    font-size: 0.76rem;
+    color: var(--muted);
+    padding-left: 0.9rem;
+    position: relative;
+  }
+
+  .task-card ul li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-size: 0.65rem;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+  }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.18rem 0.5rem;
+    border-radius: 2px;
+    background: var(--cream);
+    color: var(--accent);
+    border: 1px solid var(--rule);
+  }
+
+  /* RAI CALLOUT */
+  .rai-callout {
+    background: #f0f5ee;
+    border: 1px solid #b5d4b0;
+    border-left: 4px solid var(--green);
+    border-radius: 4px;
+    padding: 1.1rem 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .rai-callout .rai-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--green);
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+
+  .rai-callout p {
+    font-size: 0.8rem;
+    line-height: 1.65;
+    color: #2d4d2a;
+  }
+
+  .rai-callout ul {
+    list-style: none;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .rai-callout ul li {
+    font-size: 0.78rem;
+    color: #2d4d2a;
+    padding-left: 1rem;
+    position: relative;
+  }
+
+  .rai-callout ul li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-size: 0.65rem;
+  }
+
+  /* DELIVERABLES */
+  .deliverables {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+  }
+
+  .deliverable-item {
+    background: var(--cream);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.77rem;
+    color: var(--muted);
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .deliverable-item .di-icon {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  /* PAGE FOOTER */
+  .page-footer {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-brand {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--rule);
+  }
+
+  .page-number {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--rule);
+  }
+
+  /* PAGE 2 SPECIFIC */
+  .resource-section {
+    margin-bottom: 1.75rem;
+  }
+
+  .resource-group-title {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .resource-group-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .resource-card {
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: #fff;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+  }
+
+  .resource-card-header {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .rc-type {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.7rem;
+    writing-mode: horizontal-tb;
+    background: var(--cream);
+    border-right: 1px solid var(--rule);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    min-width: 65px;
+    justify-content: center;
+  }
+
+  .rc-type.ms { background: #ddeeff; color: #1e3a5f; border-right-color: #b0cce8; }
+  .rc-type.gh { background: #f0eafa; color: #5a3e8c; border-right-color: #c8b0e0; }
+  .rc-type.nb { background: #fff7e0; color: #7a5500; border-right-color: #e0c870; }
+
+  .rc-body {
+    padding: 0.65rem 0.9rem;
+    flex: 1;
+  }
+
+  .rc-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 0.2rem;
+  }
+
+  .rc-desc {
+    font-size: 0.73rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .rc-url {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--accent);
+    margin-top: 0.25rem;
+    word-break: break-all;
+    text-decoration: none;
+    display: block;
+  }
+
+  .rc-url:hover { text-decoration: underline; }
+
+  .rc-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+  }
+
+  .rc-tag {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.12rem 0.4rem;
+    border-radius: 2px;
+    background: var(--cream);
+    color: var(--muted);
+    border: 1px solid var(--rule);
+  }
+
+  /* STUCK GUIDE */
+  .stuck-box {
+    background: var(--accent);
+    color: #f0ece4;
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    margin-top: 1.75rem;
+  }
+
+  .stuck-box .stuck-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-bottom: 0.75rem;
+  }
+
+  .stuck-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .stuck-item {
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 3px;
+    padding: 0.7rem 0.85rem;
+  }
+
+  .stuck-item .si-problem {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 0.25rem;
+  }
+
+  .stuck-item .si-action {
+    font-size: 0.71rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+  }
+
+  .stuck-item .si-link {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: #9ecfff;
+    margin-top: 0.3rem;
+    display: block;
+    word-break: break-all;
+  }
+
+  /* IMPORTANT NOTE */
+  .important-note {
+    background: #fff9ee;
+    border: 1px solid #e8d5a0;
+    border-left: 4px solid var(--gold);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .important-note .in-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.4rem;
+  }
+
+  .important-note p, .important-note li {
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: #5a4520;
+  }
+
+  .important-note ul {
+    list-style: none;
+    margin-top: 0.3rem;
+  }
+
+  .important-note ul li {
+    padding-left: 1rem;
+    position: relative;
+  }
+
+  .important-note ul li::before {
+    content: '⚠';
+    position: absolute;
+    left: 0;
+    font-size: 0.6rem;
+    color: var(--gold);
+    top: 0.05rem;
+  }
+
+  @media (max-width: 600px) {
+    .page { padding: 2rem 1.5rem; }
+    .page-title { font-size: 1.8rem; }
+    .dataset-strip { grid-template-columns: 1fr 1fr; }
+    .deliverables { grid-template-columns: 1fr; }
+    .stuck-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- =============================== PAGE 1 ================================ -->
+<div class="page">
+
+  <div class="doc-label">DP-100 · Applied Case Study · Azure Machine Learning</div>
+
+  <h1 class="page-title">Credit Risk Classification<br>with Azure Machine Learning</h1>
+
+  <div class="page-subtitle">
+    Applying <strong>Pipelines, Components, AutoML, RAI Dashboard & Endpoints</strong> to a real-world financial risk scenario using the UCI German Credit dataset.
+  </div>
+
+  <div class="meta-row">
+    <div class="meta-item">
+      <span class="meta-label">Duration</span>
+      <span class="meta-value">3–4 hours</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Dataset</span>
+      <span class="meta-value">UCI German Credit (Statlog)</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Task Type</span>
+      <span class="meta-value">Binary Classification</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Tools</span>
+      <span class="meta-value">AML Studio, SDK v2, Python</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Audience</span>
+      <span class="meta-value">DP-100 Candidates</span>
+    </div>
+  </div>
+
+  <div class="dataset-strip">
+    <div class="ds-cell">
+      <div class="ds-cell-label">Records</div>
+      <div class="ds-cell-value">1,000</div>
+      <div class="ds-cell-sub">credit applicants</div>
+    </div>
+    <div class="ds-cell">
+      <div class="ds-cell-label">Features</div>
+      <div class="ds-cell-value">20</div>
+      <div class="ds-cell-sub">numeric & categorical</div>
+    </div>
+    <div class="ds-cell">
+      <div class="ds-cell-label">Target</div>
+      <div class="ds-cell-value">Risk</div>
+      <div class="ds-cell-sub">Good / Bad credit</div>
+    </div>
+    <div class="ds-cell">
+      <div class="ds-cell-label">Class Balance</div>
+      <div class="ds-cell-value">70/30</div>
+      <div class="ds-cell-sub">good vs bad risk</div>
+    </div>
+  </div>
+
+  <div class="scenario-box">
+    <div class="scenario-label">Business Scenario</div>
+    <p>
+      A mid-size European bank currently uses a <strong>legacy SAS-based scoring model</strong> to assess personal loan applications. The model has not been reviewed in three years and the risk team has no insight into why individual applications are declined. Regulators are increasingly asking for <strong>explainability documentation</strong>, and the model risk team wants to understand error patterns across customer segments before any production migration to Azure.<br><br>
+      <strong>Your task:</strong> Rebuild this workflow end-to-end in Azure Machine Learning — from data ingestion to a live scoring endpoint — and provide the risk team with a Responsible AI dashboard to support model governance.
+    </p>
+  </div>
+
+  <h2 class="section-heading"><span class="num">0</span>Get the Dataset</h2>
+  <div class="task-grid">
+    <div class="task-card">
+      <span class="task-step">Step 0.1</span>
+      <div>
+        <h3>Download from Kaggle</h3>
+        <p>Download the cleaned German Credit Risk dataset from Kaggle. This version has human-readable column names (<em>Age, Sex, Job, Credit amount, Duration, Risk</em>, etc.) which makes the RAI Dashboard significantly easier to interpret than the raw UCI version.</p>
+        <ul>
+          <li>Go to: <strong>kaggle.com/datasets/uciml/german-credit</strong></li>
+          <li>Download <code>german_credit_data.csv</code> (requires free Kaggle account)</li>
+          <li>Target column: <code>Risk</code> — values are <code>good</code> / <code>bad</code></li>
+        </ul>
+        <div class="tag-row">
+          <span class="tag">Kaggle</span><span class="tag">CSV</span><span class="tag">1000 rows</span><span class="tag">20 features</span>
+        </div>
+      </div>
+    </div>
+    <div class="task-card">
+      <span class="task-step">Step 0.2</span>
+      <div>
+        <h3>Upload to AML &amp; Create an MLTable Asset</h3>
+        <p>Upload the CSV to your AML workspace and register it as an <strong>MLTable data asset</strong>. MLTable is required for both AutoML and the RAI Dashboard — a plain CSV path will not work for either.</p>
+        <ul>
+          <li>In AML Studio: <strong>Data → Create → From local files</strong>, select type <em>Table (mltable)</em></li>
+          <li>Alternatively, place an <code>MLTable</code> definition file alongside your CSV and register via SDK: <code>ml_client.data.create_or_update(...)</code></li>
+          <li>Name it <code>german-credit</code> with version <code>1</code> for easy reference in later steps</li>
+          <li>Verify: preview should show all 1,000 rows and 21 columns including <code>Risk</code></li>
+        </ul>
+        <div class="tag-row">
+          <span class="tag">MLTable</span><span class="tag">Data Asset</span><span class="tag">AML Studio</span><span class="tag">SDK v2</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-heading"><span class="num">1</span>Setup &amp; Data Preparation</h2>
+  <div class="task-grid">
+    <div class="task-card">
+      <span class="task-step">Step 1.1</span>
+      <div>
+        <h3>Provision your AML Workspace</h3>
+        <p>Create a Compute Instance for development and a Compute Cluster (1–2 nodes, Standard_DS3_v2) for pipeline jobs. Your <code>german-credit</code> MLTable data asset from Step 0 will be used as input throughout the pipeline.</p>
+        <div class="tag-row">
+          <span class="tag">Compute Instance</span>
+          <span class="tag">Compute Cluster</span>
+          <span class="tag">MLTable</span>
+          <span class="tag">Data Asset</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-heading"><span class="num">2</span>Build a Pipeline with Components</h2>
+  <div class="task-grid">
+    <div class="task-card">
+      <span class="task-step">Step 2.1</span>
+      <div>
+        <h3>Data Prep Component</h3>
+        <p>Write a Python script that reads the MLTable, handles missing values, encodes categorical features (e.g. credit history, purpose), and splits data into train/test sets. Wrap it as a <strong>reusable AML Component</strong> using either a YAML spec or the <code>@command_component</code> decorator.</p>
+        <ul>
+          <li>Outputs: <code>train_data</code> and <code>test_data</code> as URI_FOLDER</li>
+          <li>Log preprocessing stats with MLflow</li>
+        </ul>
+        <div class="tag-row"><span class="tag">Component</span><span class="tag">YAML</span><span class="tag">MLflow</span></div>
+      </div>
+    </div>
+    <div class="task-card">
+      <span class="task-step">Step 2.2</span>
+      <div>
+        <h3>Training Component</h3>
+        <p>Train a <strong>Random Forest classifier</strong> using scikit-learn. Use MLflow autologging to capture accuracy, AUC, and feature importances. Register the model in the AML Model Registry in <strong>MLflow format</strong> (required for RAI Dashboard).</p>
+        <ul>
+          <li>Use <code>mlflow.sklearn.autolog()</code></li>
+          <li>Register with <code>mlflow.register_model()</code></li>
+        </ul>
+        <div class="tag-row"><span class="tag">Training</span><span class="tag">MLflow</span><span class="tag">Model Registry</span></div>
+      </div>
+    </div>
+    <div class="task-card">
+      <span class="task-step">Step 2.3</span>
+      <div>
+        <h3>Assemble the Pipeline</h3>
+        <p>Connect the two components using the <code>@dsl.pipeline</code> decorator. Submit the pipeline job to your Compute Cluster. Verify you can see both steps in AML Studio and inspect the run metrics for each component.</p>
+        <div class="tag-row"><span class="tag">@dsl.pipeline</span><span class="tag">Pipeline Job</span><span class="tag">SDK v2</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-heading"><span class="num">3</span>Run AutoML for Comparison</h2>
+  <div class="task-grid">
+    <div class="task-card">
+      <span class="task-step">Step 3.1</span>
+      <div>
+        <h3>AutoML Classification Job</h3>
+        <p>Configure an AutoML <strong>classification job</strong> on the same train dataset. Set primary metric to <code>AUC_weighted</code> (appropriate for the 70/30 imbalance), limit to 15 trials, and enable model explainability. Compare the best AutoML model against your manual Random Forest.</p>
+        <ul>
+          <li>Primary metric: <code>AUC_weighted</code></li>
+          <li>Enable <code>enable_model_explainability=True</code></li>
+          <li>Inspect the featurization report and guardrails output</li>
+        </ul>
+        <div class="tag-row"><span class="tag">AutoML</span><span class="tag">AUC_weighted</span><span class="tag">Featurization</span><span class="tag">Guardrails</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-heading"><span class="num">4</span>Responsible AI Dashboard</h2>
+  <div class="task-grid">
+    <div class="task-card">
+      <span class="task-step">Step 4.1</span>
+      <div>
+        <h3>Generate the RAI Dashboard</h3>
+        <p>Using AML Studio UI, generate a RAI Dashboard for your registered Random Forest model. Enable <strong>Error Analysis, Model Explanations, and Counterfactuals</strong>. Use the train and test datasets you registered as MLTable assets.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="rai-callout">
+    <div class="rai-label">🔍 RAI Analysis Tasks — answer these questions using the dashboard</div>
+    <ul>
+      <li>Which cohort of applicants has the highest model error rate? (Hint: use Error Analysis tree, filter by <em>age</em> or <em>credit_amount</em>)</li>
+      <li>What are the top 3 features driving the model globally? Do they match domain intuition from a risk management perspective?</li>
+      <li>Pick one falsely rejected applicant. Use Local Explanations to understand which features drove the incorrect decision.</li>
+      <li>Use Counterfactuals: what is the minimum change to <em>duration</em> or <em>credit_amount</em> that would flip a "Bad" prediction to "Good"?</li>
+      <li><strong>Governance question:</strong> How would you document these RAI findings to satisfy model risk governance requirements in a regulated financial institution?</li>
+    </ul>
+  </div>
+
+  <h2 class="section-heading"><span class="num">5</span>Deploy to an Online Endpoint</h2>
+  <div class="task-grid">
+    <div class="task-card">
+      <span class="task-step">Step 5.1</span>
+      <div>
+        <h3>Create a Managed Online Endpoint</h3>
+        <p>Deploy your registered Random Forest model to a <strong>managed online endpoint</strong> using SDK v2 or Studio. Start with a single <code>blue</code> deployment handling 100% of traffic. Test it by sending a JSON payload with a sample applicant profile.</p>
+        <ul>
+          <li>Instance type: <code>Standard_DS2_v2</code>, instance count: 1</li>
+          <li>Test with <code>ml_client.online_endpoints.invoke()</code></li>
+        </ul>
+        <div class="tag-row"><span class="tag">Online Endpoint</span><span class="tag">ManagedOnlineDeployment</span><span class="tag">Blue/Green</span></div>
+      </div>
+    </div>
+    <div class="task-card">
+      <span class="task-step">Step 5.2 (Stretch)</span>
+      <div>
+        <h3>Blue/Green Traffic Split</h3>
+        <p>Register your best AutoML model as a second deployment (<code>green</code>). Shift 20% of traffic to the green deployment. Observe both deployments running under the same endpoint. Discuss: how would you use traffic mirroring before a full switch?</p>
+        <div class="tag-row"><span class="tag">Traffic Split</span><span class="tag">Traffic Mirroring</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-heading"><span class="num">6</span>Deliverables</h2>
+  <div class="deliverables">
+    <div class="deliverable-item"><span class="di-icon">📓</span>Pipeline notebook with 2 registered components and a successful pipeline run</div>
+    <div class="deliverable-item"><span class="di-icon">🤖</span>AutoML experiment with best model and explainability report</div>
+    <div class="deliverable-item"><span class="di-icon">🛡️</span>RAI Dashboard with answers to the 5 analysis questions above</div>
+    <div class="deliverable-item"><span class="di-icon">🚀</span>Live online endpoint with test invocation logs</div>
+    <div class="deliverable-item"><span class="di-icon">📊</span>MLflow experiment showing tracked metrics for both models</div>
+    <div class="deliverable-item"><span class="di-icon">💬</span>3-minute verbal explanation: why does the model reject applicant X?</div>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-brand">DP-100 Applied Case Study · Thiran Consultancy</span>
+    <span class="page-number">Page 1 of 2</span>
+  </div>
+
+</div>
+
+<!-- =============================== PAGE 2 ================================ -->
+<div class="page">
+
+  <div class="doc-label">DP-100 · Case Study Resources · If You Get Stuck</div>
+
+  <h1 class="page-title">Help & Reference Guide</h1>
+  <div class="page-subtitle">
+    Official Microsoft Learn docs, GitHub notebooks, and targeted guidance for each task in the case study. <strong>All links are from Microsoft's official documentation or the Azure/azureml-examples repository.</strong>
+  </div>
+
+  <!-- GROUP 1 -->
+  <div class="resource-section">
+    <div class="resource-group-title">Steps 0–1 — Dataset & Workspace Setup</div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type nb">Kaggle</span>
+        <div class="rc-body">
+          <div class="rc-title">German Credit Risk dataset (cleaned, with column headers)</div>
+          <div class="rc-desc">The recommended source for this case study. Contains 1,000 rows, 20 features, and a <code>Risk</code> target column with values <em>good</em> / <em>bad</em>. Column names are human-readable, which is essential for meaningful RAI Dashboard output. Free Kaggle account required to download.</div>
+          <a class="rc-url" href="https://www.kaggle.com/datasets/uciml/german-credit" target="_blank">kaggle.com/datasets/uciml/german-credit</a>
+          <div class="rc-tags"><span class="rc-tag">Dataset</span><span class="rc-tag">CSV</span><span class="rc-tag">1000 rows</span><span class="rc-tag">Binary Classification</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Create and manage data assets in Azure Machine Learning</div>
+          <div class="rc-desc">Covers registering URI_FILE, URI_FOLDER, and MLTable data assets. Essential for setting up your German Credit dataset correctly.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-create-data-assets" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-create-data-assets</a>
+          <div class="rc-tags"><span class="rc-tag">MLTable</span><span class="rc-tag">URI_FILE</span><span class="rc-tag">Data Asset</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Manage compute resources in Azure Machine Learning</div>
+          <div class="rc-desc">How to create compute instances and compute clusters. Includes guidance on VM sizes and auto-scaling.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-create-attach-compute-cluster" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-create-attach-compute-cluster</a>
+          <div class="rc-tags"><span class="rc-tag">Compute Cluster</span><span class="rc-tag">Compute Instance</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUP 2 -->
+  <div class="resource-section">
+    <div class="resource-group-title">Steps 2–2.3 — Components & Pipelines</div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Tutorial: Create and run ML pipelines using components (SDK v2)</div>
+          <div class="rc-desc">The definitive end-to-end tutorial. Uses a credit default dataset — almost identical to this case study. Covers @command_component, @dsl.pipeline, and submitting a pipeline job. Start here.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/tutorial-pipeline-python-sdk" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/tutorial-pipeline-python-sdk</a>
+          <div class="rc-tags"><span class="rc-tag">Pipeline</span><span class="rc-tag">Components</span><span class="rc-tag">SDK v2</span><span class="rc-tag">Credit Default</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type gh">GitHub</span>
+        <div class="rc-body">
+          <div class="rc-title">azureml-examples: get-started-notebooks/pipeline.ipynb</div>
+          <div class="rc-desc">Official Jupyter notebook from the AML examples repo. Shows the full pipeline build with two components (data prep + training) step by step, including MLflow logging.</div>
+          <a class="rc-url" href="https://github.com/Azure/azureml-examples/blob/main/tutorials/get-started-notebooks/pipeline.ipynb" target="_blank">github.com/Azure/azureml-examples → tutorials/get-started-notebooks/pipeline.ipynb</a>
+          <div class="rc-tags"><span class="rc-tag">Notebook</span><span class="rc-tag">Components</span><span class="rc-tag">MLflow</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Create and run component-based ML pipelines (CLI / YAML)</div>
+          <div class="rc-desc">If you prefer defining components with YAML specs rather than Python decorators, this is the reference. Explains input/output types, environments, and pipeline.yml structure.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-create-component-pipelines-cli" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-create-component-pipelines-cli</a>
+          <div class="rc-tags"><span class="rc-tag">YAML</span><span class="rc-tag">CLI v2</span><span class="rc-tag">Component Spec</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type gh">GitHub</span>
+        <div class="rc-body">
+          <div class="rc-title">azureml-examples: e2e-ml-workflow.ipynb (credit default end-to-end)</div>
+          <div class="rc-desc">An end-to-end notebook covering components, pipeline, model registration, and online endpoint deployment — all using a credit default prediction dataset. Highly relevant reference.</div>
+          <a class="rc-url" href="https://github.com/Azure/azureml-examples/blob/main/tutorials/e2e-ds-experience/e2e-ml-workflow.ipynb" target="_blank">github.com/Azure/azureml-examples → tutorials/e2e-ds-experience/e2e-ml-workflow.ipynb</a>
+          <div class="rc-tags"><span class="rc-tag">End-to-End</span><span class="rc-tag">Credit Default</span><span class="rc-tag">Endpoint</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUP 3 -->
+  <div class="resource-section">
+    <div class="resource-group-title">Step 3 — AutoML</div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Tutorial: Train a no-code classification model with AutoML (Studio UI)</div>
+          <div class="rc-desc">No-code walkthrough for configuring AutoML classification in the Studio. If you're not comfortable with SDK yet, start here — it uses a bank/financial dataset very similar to German Credit.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/tutorial-first-experiment-automated-ml" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/tutorial-first-experiment-automated-ml</a>
+          <div class="rc-tags"><span class="rc-tag">AutoML</span><span class="rc-tag">Classification</span><span class="rc-tag">No-Code</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Set up AutoML with Python SDK v2</div>
+          <div class="rc-desc">Code-first guide for configuring AutoML classification jobs. Covers primary metrics, cross-validation, blocked algorithms, featurization config, and how to retrieve the best model.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-configure-auto-train" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-configure-auto-train</a>
+          <div class="rc-tags"><span class="rc-tag">AutoML SDK</span><span class="rc-tag">AUC_weighted</span><span class="rc-tag">Featurization</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUP 4 -->
+  <div class="resource-section">
+    <div class="resource-group-title">Step 4 — Responsible AI Dashboard</div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Generate a Responsible AI dashboard in the Studio UI (no-code)</div>
+          <div class="rc-desc">Step-by-step guide for creating the RAI dashboard from a registered model using the wizard in AML Studio. Covers error analysis, explanations, counterfactuals, and causal analysis setup.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-responsible-ai-insights-ui" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-responsible-ai-insights-ui</a>
+          <div class="rc-tags"><span class="rc-tag">RAI Dashboard</span><span class="rc-tag">No-Code</span><span class="rc-tag">Error Analysis</span><span class="rc-tag">Counterfactuals</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Use the Responsible AI dashboard in AML Studio</div>
+          <div class="rc-desc">How to navigate and interpret the dashboard components — error tree, heatmap, local explanations, counterfactual what-if. Important: RAI Dashboard requires sklearn MLflow models; AutoML models are not currently supported.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-responsible-ai-dashboard" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-responsible-ai-dashboard</a>
+          <div class="rc-tags"><span class="rc-tag">RAI</span><span class="rc-tag">Feature Importance</span><span class="rc-tag">Cohort Analysis</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Generate RAI insights with YAML and Python SDK (advanced)</div>
+          <div class="rc-desc">If the Studio UI wizard doesn't work for your model, use this code-based approach. Describes the RAI pipeline components: rai_constructor, error_analysis, explanation, counterfactual, causal, gather.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-responsible-ai-insights-sdk-cli" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-responsible-ai-insights-sdk-cli</a>
+          <div class="rc-tags"><span class="rc-tag">RAI SDK</span><span class="rc-tag">Pipeline Components</span><span class="rc-tag">MLTable</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUP 5 -->
+  <div class="resource-section">
+    <div class="resource-group-title">Steps 5–5.2 — Endpoints & Deployment</div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Tutorial: Deploy a model to an online endpoint (SDK v2)</div>
+          <div class="rc-desc">The official deployment tutorial — uses a credit card default prediction model. Walks through creating a ManagedOnlineEndpoint, ManagedOnlineDeployment, and invoking the endpoint. Nearly identical to this case study.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/tutorial-deploy-model" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/tutorial-deploy-model</a>
+          <div class="rc-tags"><span class="rc-tag">Online Endpoint</span><span class="rc-tag">SDK v2</span><span class="rc-tag">Credit Default</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Deploy an AutoML model to an online endpoint</div>
+          <div class="rc-desc">Specific to deploying AutoML-trained models. Covers the no-code "Deploy" button from the AutoML Models tab, as well as YAML-based deployment for the stretch exercise (blue/green).</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-deploy-automl-endpoint" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-deploy-automl-endpoint</a>
+          <div class="rc-tags"><span class="rc-tag">AutoML Deploy</span><span class="rc-tag">Blue Deployment</span><span class="rc-tag">YAML</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <span class="rc-type ms">MS Learn</span>
+        <div class="rc-body">
+          <div class="rc-title">Safe rollout for online endpoints (Blue/Green & traffic mirroring)</div>
+          <div class="rc-desc">How to update an endpoint with a new deployment and gradually shift traffic. Covers traffic_weight, mirror_traffic, and the rollout strategy — directly relevant to Step 5.2.</div>
+          <a class="rc-url" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-safely-rollout-online-endpoints" target="_blank">learn.microsoft.com/en-us/azure/machine-learning/how-to-safely-rollout-online-endpoints</a>
+          <div class="rc-tags"><span class="rc-tag">Blue/Green</span><span class="rc-tag">Traffic Split</span><span class="rc-tag">Mirror Traffic</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUCK GUIDE -->
+  <div class="stuck-box">
+    <div class="stuck-label">🔧 Common Blockers & How to Resolve Them</div>
+    <div class="stuck-grid">
+      <div class="stuck-item">
+        <div class="si-problem">RAI Dashboard fails to generate</div>
+        <div class="si-action">Check that your model is registered as MLflow format with sklearn flavor. AutoML models are not directly supported — use your manual Random Forest. Datasets must be MLTable format, not CSV.</div>
+      </div>
+      <div class="stuck-item">
+        <div class="si-problem">Pipeline component input/output mismatch</div>
+        <div class="si-action">Verify your Output type in the component spec matches what downstream steps expect as Input. Use URI_FOLDER for directories. Check the <code>.outputs</code> property when connecting components in the pipeline function.</div>
+      </div>
+      <div class="stuck-item">
+        <div class="si-problem">AutoML job fails with MLTable error</div>
+        <div class="si-action">AutoML requires MLTable, not URI_FILE or raw CSV. Create an MLTable definition file (<code>MLTable</code>) in the same folder as your CSV, then register as an MLTable data asset.</div>
+        <a class="si-link" href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-create-data-assets">learn.microsoft.com → how-to-create-data-assets</a>
+      </div>
+      <div class="stuck-item">
+        <div class="si-problem">Online endpoint times out or returns 502</div>
+        <div class="si-action">Check deployment logs in Studio (Endpoints → your endpoint → Deployment logs). For MLflow models, no scoring script is needed — if you added one, it may conflict. Ensure instance count ≥ 1 and deployment is in "Succeeded" state before invoking.</div>
+      </div>
+      <div class="stuck-item">
+        <div class="si-problem">Can't see MLflow metrics in Studio</div>
+        <div class="si-action">You don't need to set <code>mlflow.set_tracking_uri()</code> in AML — it's set automatically. Ensure <code>mlflow.start_run()</code> is used, or use <code>autolog()</code>. Look in the job's Metrics tab, not the Experiment panel.</div>
+      </div>
+      <div class="stuck-item">
+        <div class="si-problem">Component environment build takes too long</div>
+        <div class="si-action">Use a curated AML environment as your base image (e.g. <code>AzureML-sklearn-1.5-ubuntu22.04-py38-cpu</code>) rather than building from scratch. This avoids a full Docker rebuild on every run.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="important-note">
+    <div class="in-label">⚠ Known Constraints to Be Aware Of</div>
+    <ul>
+      <li>The RAI Dashboard currently only supports <strong>scikit-learn models registered in MLflow format</strong>. AutoML models cannot be directly used — use your pipeline-trained Random Forest.</li>
+      <li>RAI Dashboard test datasets must have <strong>fewer than 5,000 rows</strong> for the visualization UI. The German Credit dataset (1,000 rows) is fine.</li>
+      <li>Blue/green deployment traffic split requires both deployments to be <strong>under the same endpoint</strong>. You cannot split traffic between two separate endpoints.</li>
+      <li>Free/trial Azure subscriptions have <strong>limited compute quota</strong> — if cluster nodes aren't provisioning, check quota in the Azure portal under Subscriptions → Usage + quotas.</li>
+    </ul>
+  </div>
+
+  <div class="page-footer">
+    <span class="footer-brand">DP-100 Applied Case Study · Thiran Consultancy</span>
+    <span class="page-number">Page 2 of 2</span>
+  </div>
+
+</div>
+
+</body>
+</html>
